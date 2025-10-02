@@ -1,9 +1,12 @@
 import { Component } from '@angular/core';
 
 import { MatDialog } from '@angular/material/dialog';
-import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 import { AppointmentDialogComponent } from '../appointment-dialog/appointment-dialog.component';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf, NgFor, NgStyle, DatePipe } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatButtonToggleGroup, MatButtonToggle } from '@angular/material/button-toggle';
 
 interface Resource {
   id: string;
@@ -32,6 +35,22 @@ export enum CalendarView {
   selector: 'app-calendar',
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.scss'],
+  standalone: true,
+  imports: [
+    CdkDropListGroup,
+    NgIf,
+    MatButtonToggleGroup,
+    MatButtonToggle,
+    MatIconButton,
+    MatIcon,
+    MatButton,
+    NgFor,
+    CdkDropList,
+    NgStyle,
+    CdkDrag,
+    CdkDragHandle,
+    DatePipe,
+  ],
 })
 export class CalendarComponent {
   viewDate: Date = new Date();
