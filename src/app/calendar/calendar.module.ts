@@ -24,6 +24,7 @@ const routes: Routes = [{ path: '', component: CalendarComponent }];
     DragDropModule,
     AppointmentDialogComponent,
     RouterModule.forChild(routes),
+
   ],
 })
-export class CalendarModule {}
+export class CalendarModule { }

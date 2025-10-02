@@ -3,6 +3,14 @@ import { Component } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AppointmentDialogComponent } from '../appointment-dialog/appointment-dialog.component';
+import { CommonModule } from '@angular/common';
+
+interface Resource {
+  id: string;
+  name: string;
+  color: string;
+  capacity?: number;
+}
 
 interface Appointment {
   uuid?: string;
@@ -11,6 +19,7 @@ interface Appointment {
   startTime: string;
   endTime: string;
   color?: string;
+  resourceId?: string;
 }
 
 export enum CalendarView {
@@ -28,8 +37,21 @@ export class CalendarComponent {
   viewDate: Date = new Date();
   selectedDate: Date | null = null;
   selectedStartTime: string | undefined;
-  weekDays: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  selectedResource: Resource | null = null;
+  weekDays: string[] = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   monthDays: Date[] = [];
+
+  // Ressourcen/Räume definieren
+  resources: Resource[] = [
+    { id: 'room-1', name: 'Besprechungsraum A', color: '#e3f2fd', capacity: 10 },
+    { id: 'room-2', name: 'Besprechungsraum B', color: '#f3e5f5', capacity: 8 },
+    { id: 'room-3', name: 'Konferenzsaal', color: '#e8f5e9', capacity: 50 },
+    { id: 'room-4', name: 'Kleines Büro', color: '#fff3e0', capacity: 4 },
+  ];
+
+  // Tracking welche Räume sichtbar sind
+  visibleResources: Set<string> = new Set();
+
   appointments: Appointment[] = [
     {
       uuid: '00000000-0000-0000-0000-000000000001',
@@ -38,23 +60,26 @@ export class CalendarComponent {
         new Date().getMonth(),
         new Date().getDate()
       ),
-      title: 'Meeting with Bob',
+      title: 'Meeting mit Bob',
       startTime: '09:00',
       endTime: '10:00',
+      resourceId: 'room-1',
     },
     {
       uuid: '00000000-0000-0000-0000-000000000002',
       date: new Date(new Date().getFullYear(), new Date().getMonth(), 2),
-      title: 'Lunch with Alice',
+      title: 'Mittagessen mit Alice',
       startTime: '12:00',
       endTime: '13:00',
+      resourceId: 'room-2',
     },
     {
       uuid: '00000000-0000-0000-0000-000000000003',
       date: new Date(new Date().getFullYear(), new Date().getMonth(), 3),
-      title: 'Project Deadline',
+      title: 'Projekt Deadline',
       startTime: '15:00',
       endTime: '16:00',
+      resourceId: 'room-3',
     },
     {
       uuid: '00000000-0000-0000-0000-000000000004',
@@ -63,9 +88,10 @@ export class CalendarComponent {
         new Date().getMonth(),
         new Date().getDate()
       ),
-      title: 'Doctor Appointment',
+      title: 'Arzttermin',
       startTime: '10:00',
       endTime: '11:00',
+      resourceId: 'room-1',
     },
     {
       uuid: '00000000-0000-0000-0000-000000000005',
@@ -77,147 +103,34 @@ export class CalendarComponent {
       title: 'Team Meeting',
       startTime: '14:00',
       endTime: '15:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000006',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate()
-      ),
-      title: 'Coffee with Mike',
-      startTime: '11:00',
-      endTime: '12:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000007',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate() + 4
-      ),
-      title: 'Client Call',
-      startTime: '09:30',
-      endTime: '10:30',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000008',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 8),
-      title: 'Gym',
-      startTime: '17:00',
-      endTime: '18:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000009',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate() - 1
-      ),
-      title: 'Dentist Appointment',
-      startTime: '11:30',
-      endTime: '12:30',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000a',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate() - 2
-      ),
-      title: 'Birthday Party',
-      startTime: '19:00',
-      endTime: '21:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000b',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 11),
-      title: 'Conference',
-      startTime: '13:00',
-      endTime: '14:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000c',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 12),
-      title: 'Workshop',
-      startTime: '10:00',
-      endTime: '12:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000d',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 13),
-      title: 'Brunch with Sarah',
-      startTime: '11:00',
-      endTime: '12:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000e',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate() + 2
-      ),
-      title: 'Networking Event',
-      startTime: '18:00',
-      endTime: '20:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-00000000000f',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 16),
-      title: 'Yoga Class',
-      startTime: '07:00',
-      endTime: '08:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000010',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 16),
-      title: 'Strategy Meeting',
-      startTime: '10:00',
-      endTime: '11:30',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000011',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 17),
-      title: 'Call with Investor',
-      startTime: '14:00',
-      endTime: '15:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000012',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 18),
-      title: 'Team Lunch',
-      startTime: '12:00',
-      endTime: '13:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000013',
-      date: new Date(
-        new Date().getFullYear(),
-        new Date().getMonth(),
-        new Date().getDate() + 3
-      ),
-      title: 'HR Meeting',
-      startTime: '16:00',
-      endTime: '17:00',
-    },
-    {
-      uuid: '00000000-0000-0000-0000-000000000014',
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 20),
-      title: 'Board Meeting',
-      startTime: '11:00',
-      endTime: '12:00',
+      resourceId: 'room-2',
     },
   ];
+
   currentView: CalendarView = CalendarView.Month;
   timeSlots: string[] = [];
-
   weeks: Date[][] = [];
+
+  // Slot-Selection für Drag
+  isSelecting: boolean = false;
+  selectionStart: { date: Date; slot: string; resource?: Resource } | null = null;
+  selectionEnd: { date: Date; slot: string; resource?: Resource } | null = null;
+  selectedSlots: Set<string> = new Set();
 
   public CalendarView = CalendarView;
 
   constructor(public dialog: MatDialog) {
     this.appointments.forEach((appointment) => {
-      appointment.color = this.getRandomColor();
+      const resource = this.resources.find(r => r.id === appointment.resourceId);
+      if (resource) {
+        appointment.color = resource.color;
+      } else if (!appointment.color) {
+        appointment.color = this.getRandomColor();
+      }
+    });
+    // Alle Ressourcen initial sichtbar machen
+    this.resources.forEach(resource => {
+      this.visibleResources.add(resource.id);
     });
     this.generateView(this.currentView, this.viewDate);
     this.generateTimeSlots();
@@ -232,7 +145,7 @@ export class CalendarComponent {
         this.generateWeekView(date);
         break;
       case CalendarView.Day:
-        this.generateDayView(date);
+        this.generateResourceDayView(date);
         break;
       default:
         this.generateMonthView(date);
@@ -295,11 +208,19 @@ export class CalendarComponent {
     this.monthDays = [date];
   }
 
+  generateResourceDayView(date: Date) {
+    this.monthDays = [date];
+  }
+
   generateTimeSlots() {
-    for (let hour = 0; hour <= 24; hour++) {
-      const time = hour < 10 ? `0${hour}:00` : `${hour}:00`;
-      this.timeSlots.push(time);
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        const h = hour < 10 ? `0${hour}` : `${hour}`;
+        const m = minute < 10 ? `0${minute}` : `${minute}`;
+        this.timeSlots.push(`${h}:${m}`);
+      }
     }
+    this.timeSlots.push('24:00');
   }
 
   switchToView(view: CalendarView) {
@@ -329,7 +250,7 @@ export class CalendarComponent {
       this.viewDate = new Date(
         this.viewDate.setDate(this.viewDate.getDate() - 1)
       );
-      this.generateDayView(this.viewDate);
+      this.generateResourceDayView(this.viewDate);
     }
   }
 
@@ -348,7 +269,7 @@ export class CalendarComponent {
       this.viewDate = new Date(
         this.viewDate.setDate(this.viewDate.getDate() + 1)
       );
-      this.generateDayView(this.viewDate);
+      this.generateResourceDayView(this.viewDate);
     }
   }
 
@@ -380,18 +301,36 @@ export class CalendarComponent {
     );
   }
 
-  selectDate(date?: Date, startTime?: string) {
+  selectDate(date?: Date, startTime?: string, resource?: Resource) {
     if (date) {
       this.selectedDate = date;
     } else {
       this.selectedDate = new Date();
     }
     this.selectedStartTime = startTime;
+    this.selectedResource = resource || null;
+
+    // Wenn Slots ausgewählt wurden, berechne Start und Endzeit
+    if (this.selectionStart && this.selectionEnd) {
+      const startSlotIndex = this.timeSlots.indexOf(this.selectionStart.slot);
+      const endSlotIndex = this.timeSlots.indexOf(this.selectionEnd.slot);
+
+      if (startSlotIndex !== -1 && endSlotIndex !== -1) {
+        const minIndex = Math.min(startSlotIndex, endSlotIndex);
+        const maxIndex = Math.max(startSlotIndex, endSlotIndex);
+
+        const calculatedStartTime = this.timeSlots[minIndex];
+        const calculatedEndTime = this.timeSlots[maxIndex + 1] || this.timeSlots[maxIndex];
+        this.openDialog(calculatedStartTime, calculatedEndTime);
+        return;
+      }
+    }
+
     this.openDialog();
   }
 
   generateUUID(): string {
-    let d = new Date().getTime(); //Timestamp
+    let d = new Date().getTime();
     let d2 =
       (typeof performance !== 'undefined' &&
         performance.now &&
@@ -400,13 +339,11 @@ export class CalendarComponent {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(
       /[xy]/g,
       function (c) {
-        let r = Math.random() * 16; //random number between 0 and 16
+        let r = Math.random() * 16;
         if (d > 0) {
-          //Use timestamp until depleted
           r = (d + r) % 16 | 0;
           d = Math.floor(d / 16);
         } else {
-          //Use microseconds since page-load if supported
           r = (d2 + r) % 16 | 0;
           d2 = Math.floor(d2 / 16);
         }
@@ -419,15 +356,18 @@ export class CalendarComponent {
     date: Date,
     title: string,
     startTime: string,
-    endTime: string
+    endTime: string,
+    resourceId?: string
   ) {
+    const resource = this.resources.find(r => r.id === resourceId);
     this.appointments.push({
       uuid: this.generateUUID(),
       date,
       title,
       startTime,
       endTime,
-      color: this.getRandomColor(),
+      color: resource ? resource.color : this.getRandomColor(),
+      resourceId: resourceId,
     });
   }
 
@@ -439,19 +379,25 @@ export class CalendarComponent {
     }
   }
 
-  openDialog(): void {
+  openDialog(startTimeOverride?: string, endTimeOverride?: string): void {
     const hour = new Date().getHours();
     const minutes = new Date().getMinutes();
     const h = hour < 10 ? `0${hour}` : hour;
     const m = minutes < 10 ? `0${minutes}` : minutes;
+
+    const startTime = startTimeOverride || this.selectedStartTime || `${h}:${m}`;
+    const endTime = endTimeOverride || this.selectedStartTime || `${h}:${m}`;
+
     const dialogRef = this.dialog.open(AppointmentDialogComponent, {
       width: '500px',
       panelClass: 'dialog-container',
       data: {
         date: this.selectedDate,
         title: '',
-        startTime: this.selectedStartTime || `${h}:${m}`,
-        endTime: this.selectedStartTime || `${h}:${m}`,
+        startTime: startTime,
+        endTime: endTime,
+        resourceId: this.selectedResource?.id || null,
+        resources: this.resources,
       },
     });
 
@@ -461,9 +407,11 @@ export class CalendarComponent {
           result.date,
           result.title,
           result.startTime,
-          result.endTime
+          result.endTime,
+          result.resourceId
         );
       }
+      this.clearSelection();
     });
   }
 
@@ -479,12 +427,15 @@ export class CalendarComponent {
       });
   }
 
-  drop(event: CdkDragDrop<Appointment[]>, date: Date, slot?: string) {
+  drop(event: CdkDragDrop<Appointment[]>, date: Date, slot?: string, resource?: Resource) {
     const movedAppointment = event.item.data;
     movedAppointment.date = date;
     if (slot) {
       movedAppointment.startTime = slot;
       movedAppointment.endTime = slot;
+    }
+    if (resource) {
+      movedAppointment.resourceId = resource.id;
     }
   }
 
@@ -500,13 +451,19 @@ export class CalendarComponent {
     );
   }
 
-  getAppointmentsForDateTime(date: Date, timeSlot: string): Appointment[] {
-    const appointmentsForDateTime: Appointment[] = this.appointments.filter(
+  getAppointmentsForDateTime(date: Date, timeSlot: string, resourceId?: string): Appointment[] {
+    let appointmentsForDateTime: Appointment[] = this.appointments.filter(
       (appointment) =>
         this.isSameDate(appointment.date, date) &&
         appointment.startTime <= timeSlot &&
         appointment.endTime >= timeSlot
     );
+
+    if (resourceId) {
+      appointmentsForDateTime = appointmentsForDateTime.filter(
+        (appointment) => appointment.resourceId === resourceId
+      );
+    }
 
     return appointmentsForDateTime;
   }
@@ -524,7 +481,10 @@ export class CalendarComponent {
     const dialogRef = this.dialog.open(AppointmentDialogComponent, {
       width: '500px',
       panelClass: 'dialog-container',
-      data: appointment,
+      data: {
+        ...appointment,
+        resources: this.resources,
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
@@ -539,5 +499,96 @@ export class CalendarComponent {
         }
       }
     });
+  }
+
+  getResourceName(resourceId?: string): string {
+    if (!resourceId) return 'Kein Raum';
+    const resource = this.resources.find(r => r.id === resourceId);
+    return resource ? resource.name : 'Unbekannter Raum';
+  }
+
+  toggleResourceVisibility(resourceId: string): void {
+    if (this.visibleResources.has(resourceId)) {
+      this.visibleResources.delete(resourceId);
+    } else {
+      this.visibleResources.add(resourceId);
+    }
+  }
+
+  isResourceVisible(resourceId: string): boolean {
+    return this.visibleResources.has(resourceId);
+  }
+
+  getVisibleResources(): Resource[] {
+    return this.resources.filter(resource => this.visibleResources.has(resource.id));
+  }
+
+  onSlotMouseDown(date: Date, slot: string, resource?: Resource, event?: MouseEvent): void {
+    if (event) {
+      event.preventDefault();
+    }
+    this.isSelecting = true;
+    this.selectionStart = { date, slot, resource };
+    this.selectionEnd = { date, slot, resource };
+    this.updateSelectedSlots();
+  }
+
+  onSlotMouseEnter(date: Date, slot: string, resource?: Resource): void {
+    if (this.isSelecting && this.selectionStart) {
+      if (!resource || !this.selectionStart.resource || resource.id === this.selectionStart.resource.id) {
+        this.selectionEnd = { date, slot, resource: resource || this.selectionStart.resource };
+        this.updateSelectedSlots();
+      }
+    }
+  }
+
+  onSlotMouseUp(date: Date, slot: string, resource?: Resource): void {
+    if (this.isSelecting) {
+      this.isSelecting = false;
+      this.selectionEnd = { date, slot, resource: resource || this.selectionStart?.resource };
+
+      if (this.selectionStart && this.selectionEnd) {
+        this.selectedDate = this.selectionStart.date;
+        this.selectedResource = this.selectionStart.resource || null;
+        this.selectDate(this.selectionStart.date, undefined, this.selectionStart.resource);
+      }
+    }
+  }
+
+  updateSelectedSlots(): void {
+    this.selectedSlots.clear();
+
+    if (!this.selectionStart || !this.selectionEnd) {
+      return;
+    }
+
+    const startIndex = this.timeSlots.indexOf(this.selectionStart.slot);
+    const endIndex = this.timeSlots.indexOf(this.selectionEnd.slot);
+
+    const minIndex = Math.min(startIndex, endIndex);
+    const maxIndex = Math.max(startIndex, endIndex);
+
+    for (let i = minIndex; i <= maxIndex; i++) {
+      const key = this.getSlotKey(this.selectionStart.date, this.timeSlots[i], this.selectionStart.resource);
+      this.selectedSlots.add(key);
+    }
+  }
+
+  getSlotKey(date: Date, slot: string, resource?: Resource): string {
+    const dateStr = date.toISOString().split('T')[0];
+    const resourceId = resource?.id || 'none';
+    return `${dateStr}-${slot}-${resourceId}`;
+  }
+
+  isSlotSelected(date: Date, slot: string, resource?: Resource): boolean {
+    const key = this.getSlotKey(date, slot, resource);
+    return this.selectedSlots.has(key);
+  }
+
+  clearSelection(): void {
+    this.isSelecting = false;
+    this.selectionStart = null;
+    this.selectionEnd = null;
+    this.selectedSlots.clear();
   }
 }
